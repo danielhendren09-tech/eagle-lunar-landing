@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EAGLE — Apollo 11 Lunar Landing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene"></canvas>
+
+      <div id="hud" class="hidden">
+        <div class="hud-top">
+          <div class="callsign">
+            <span class="mission">APOLLO 11</span>
+            <span class="ship">LM EAGLE</span>
+          </div>
+          <div id="callout" class="callout"></div>
+          <div id="stick-status" class="stick-status">SEARCHING FOR STICK…</div>
+        </div>
+
+        <div class="hud-left">
+          <div class="tape" id="alt-tape">
+            <div class="tape-label">ALT FT</div>
+            <div class="tape-value" id="alt-value">—</div>
+          </div>
+          <div class="tape" id="vs-tape">
+            <div class="tape-label">V/S FPS</div>
+            <div class="tape-value" id="vs-value">—</div>
+            <div class="tape-bar"><div id="vs-needle"></div></div>
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <div class="tape fuel" id="fuel-tape">
+            <div class="tape-label">FUEL</div>
+            <div class="tape-value" id="fuel-value">100%</div>
+            <div class="fuel-bar"><div id="fuel-fill"></div></div>
+          </div>
+          <div class="tape">
+            <div class="tape-label">H-VEL FPS</div>
+            <div class="tape-value" id="hs-value">—</div>
+          </div>
+          <div class="tape" id="range-tape">
+            <div class="tape-label">RANGE FT</div>
+            <div class="tape-value" id="range-value">—</div>
+          </div>
+        </div>
+
+        <div class="adi-wrap">
+          <div id="adi" class="adi">
+            <div id="adi-ball" class="adi-ball"></div>
+            <div class="adi-wings"></div>
+            <div class="adi-label">ATTITUDE</div>
+          </div>
+        </div>
+
+        <div id="contact-light" class="contact-light">CONTACT LIGHT</div>
+        <div id="alarm" class="alarm">1202 PROGRAM ALARM</div>
+
+        <div class="hud-bottom">
+          <div class="stick-viz" id="stick-viz">
+            <div class="stick-cross"><div id="stick-dot"></div></div>
+            <div class="throttle-track"><div id="throttle-fill"></div></div>
+            <div class="stick-captions">
+              <span>STICK</span>
+              <span>THROTTLE</span>
+            </div>
+          </div>
+          <div class="hint" id="live-hint">
+            Slider = engine · Stick tilts Eagle · Twist to yaw · Cut throttle on CONTACT LIGHT
+          </div>
+        </div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <div class="overlay-card" id="overlay-card">
+          <p class="kicker">JULY 20, 1969 · SEA OF TRANQUILITY</p>
+          <h1>EAGLE</h1>
+          <p class="tagline">Recreate Neil Armstrong’s lunar landing</p>
+          <p class="brief">
+            The computer just threw a 1202 alarm. The planned site is a boulder field.
+            You have one job: fly <em>Eagle</em> to a clear patch and set her down
+            gently before the fuel gauge hits empty.
+          </p>
+          <div class="controls-card">
+            <h2>Logitech Extreme 3D Pro</h2>
+            <ul>
+              <li><strong>Throttle slider</strong> — descent engine (this is your most important control)</li>
+              <li><strong>Stick</strong> — tilt Eagle so thrust steers you sideways</li>
+              <li><strong>Twist</strong> — yaw (turn to face the landing site)</li>
+              <li><strong>Hat (coolie hat on top)</strong> — look around. Push it forward to look down on the gold ring. Left/right orbits. The view stays until you hat it back.</li>
+              <li><strong>Trigger</strong> — start / continue</li>
+              <li><strong>Thumb button</strong> — chase camera or window view</li>
+            </ul>
+            <p class="fine">Keyboard backup: arrows tilt · Q/E yaw · Shift/Ctrl or 1/2/3 throttle · I/K look down or chase · J/L orbit · C window · R restart</p>
+            <div class="menu-throttle">
+              <span>THROTTLE</span>
+              <div class="menu-throttle-track"><div id="menu-throttle-fill"></div></div>
+              <span id="menu-throttle-pct">0%</span>
+            </div>
+          </div>
+          <div class="difficulty">
+            <button data-diff="cadet" class="diff active">Cadet</button>
+            <button data-diff="pilot" class="diff">Pilot</button>
+            <button data-diff="commander" class="diff">Commander</button>
+          </div>
+          <p class="diff-note" id="diff-note">
+            Start almost over the gold ring. Extra fuel, stick points the ship. Learn the throttle first.
+          </p>
+          <div class="actions">
+            <button id="btn-start" class="primary">PRESS TRIGGER TO START</button>
+            <button id="btn-invert" class="ghost">Invert throttle</button>
+          </div>
+          <p id="pad-line" class="pad-line">Plug in the Extreme 3D Pro, then slide the throttle — watch the bar.</p>
+        </div>
+      </div>
+
+      <div id="debrief" class="overlay hidden">
+        <div class="overlay-card debrief-card">
+          <p class="kicker" id="debrief-kicker">MISSION RESULT</p>
+          <h1 id="debrief-title">THE EAGLE HAS LANDED</h1>
+          <p class="tagline" id="debrief-quote"></p>
+          <ul class="stats" id="debrief-stats"></ul>
+          <div class="actions">
+            <button id="btn-again" class="primary">FLY AGAIN</button>
+            <button id="btn-menu" class="ghost">Mission briefing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
