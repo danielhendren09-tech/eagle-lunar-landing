@@ -19,7 +19,7 @@
       <div id="hud" class="hidden">
         <div class="hud-top">
           <div class="callsign">
-            <span class="mission">APOLLO 11</span>
+            <span class="mission" id="mission-label">APOLLO 11</span>
             <span class="ship">LM EAGLE</span>
           </div>
           <div id="callout" class="callout"></div>
@@ -52,6 +52,10 @@
             <div class="tape-label">RANGE FT</div>
             <div class="tape-value" id="range-value">—</div>
           </div>
+          <div class="tape hidden" id="rings-tape">
+            <div class="tape-label">RINGS</div>
+            <div class="tape-value" id="rings-value">0/5</div>
+          </div>
         </div>
 
         <div class="adi-wrap">
@@ -82,7 +86,7 @@
 
       <div id="overlay" class="overlay">
         <div class="overlay-card" id="overlay-card">
-          <p class="kicker">JULY 20, 1969 · SEA OF TRANQUILITY</p>
+          <p class="kicker" id="brief-kicker">JULY 20, 1969 · SEA OF TRANQUILITY</p>
           <h1>EAGLE</h1>
           <p class="tagline">Recreate Neil Armstrong’s lunar landing</p>
           <p class="brief">
@@ -91,7 +95,7 @@
             gently before the fuel gauge hits empty.
           </p>
           <div class="controls-card">
-            <h2>Logitech Extreme 3D Pro</h2>
+            <h2>Controls</h2>
             <ul>
               <li><strong>Throttle slider</strong> — descent engine (this is your most important control)</li>
               <li><strong>Stick</strong> — tilt Eagle so thrust steers you sideways</li>
@@ -107,19 +111,29 @@
               <span id="menu-throttle-pct">0%</span>
             </div>
           </div>
-          <div class="difficulty">
-            <button data-diff="cadet" class="diff active">Cadet</button>
-            <button data-diff="pilot" class="diff">Pilot</button>
-            <button data-diff="commander" class="diff">Commander</button>
+          <div class="select-block">
+            <h2 class="select-title">World</h2>
+            <div class="planet-grid" id="planet-grid"></div>
+            <p class="planet-note" id="planet-note">1.62 m/s² — about 1/6 of Earth. This is the real Apollo landing.</p>
           </div>
-          <p class="diff-note" id="diff-note">
-            Start almost over the gold ring. Extra fuel, stick points the ship. Learn the throttle first.
-          </p>
+          <div class="select-block">
+            <h2 class="select-title">Mode</h2>
+            <div class="difficulty">
+              <button data-diff="cadet" class="diff active">Cadet</button>
+              <button data-diff="pilot" class="diff">Pilot</button>
+              <button data-diff="commander" class="diff">Commander</button>
+              <button data-diff="apollo" class="diff">Apollo</button>
+              <button data-diff="free" class="diff">Free</button>
+            </div>
+            <p class="diff-note" id="diff-note">
+              Start almost over the gold ring. Extra fuel, stick points the ship. Learn the throttle first.
+            </p>
+          </div>
           <div class="actions">
             <button id="btn-start" class="primary">PRESS TRIGGER TO START</button>
             <button id="btn-invert" class="ghost">Invert throttle</button>
           </div>
-          <p id="pad-line" class="pad-line">Plug in the Extreme 3D Pro, then slide the throttle — watch the bar.</p>
+          <p id="pad-line" class="pad-line">Plug in the joystick, then slide the throttle — watch the bar.</p>
         </div>
       </div>
 

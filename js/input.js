@@ -30,6 +30,7 @@ export const DIFFICULTY = {
     maxLandVs: 3.2,
     maxLandHs: 2.2,
     maxLandTilt: 16,
+    freeFlight: false,
   },
   pilot: {
     label: "Pilot",
@@ -46,6 +47,7 @@ export const DIFFICULTY = {
     maxLandVs: 2.6,
     maxLandHs: 1.7,
     maxLandTilt: 12,
+    freeFlight: false,
   },
   commander: {
     label: "Commander",
@@ -62,6 +64,43 @@ export const DIFFICULTY = {
     maxLandVs: 2.1,
     maxLandHs: 1.3,
     maxLandTilt: 10,
+    freeFlight: false,
+  },
+  free: {
+    label: "Free",
+    note: "Unlimited fuel. Soft land anywhere, fly the glow rings, don't escape the gravity well.",
+    fuel: 1,
+    maxThrustG: 2.5,
+    startAlt: 90,
+    startHoriz: 2,
+    startVs: -0.8,
+    startX: 40,
+    startZ: 28,
+    padRadius: 9999,
+    directAttitude: true,
+    maxLandVs: 4.5,
+    maxLandHs: 3.5,
+    maxLandTilt: 25,
+    freeFlight: true,
+    apollo: false,
+  },
+  apollo: {
+    label: "Apollo",
+    note: "Moon only. Historical Capcom calls, 1202 alarm, tight fuel — recreate July 20, 1969.",
+    fuel: 0.52,
+    maxThrustG: 2.05,
+    startAlt: 72,
+    startHoriz: 10.2,
+    startVs: -1.2,
+    startX: 95,
+    startZ: 30,
+    padRadius: 14,
+    directAttitude: false,
+    maxLandVs: 2.15,
+    maxLandHs: 1.35,
+    maxLandTilt: 10,
+    freeFlight: false,
+    apollo: true,
   },
 };
 
@@ -336,7 +375,7 @@ export class Input {
   }
 
   menuHint() {
-    if (!this.connected) return "No joystick yet. Plug in the Extreme 3D Pro, or fly with the keyboard.";
+    if (!this.connected) return "No joystick yet. Plug in a stick, or fly with the keyboard.";
     const pct = Math.round(this.throttle * 100);
     const dump = this.axesLive.map((v, i) => `${i}:${v.toFixed(2)}`).join("  ");
     if (this.throttleAxis == null) {

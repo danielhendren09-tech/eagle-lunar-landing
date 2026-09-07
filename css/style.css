@@ -376,10 +376,12 @@ canvas#scene {
 }
 
 .overlay-card {
-  width: min(640px, 100%);
+  width: min(720px, 100%);
+  max-height: min(92vh, 900px);
+  overflow-y: auto;
   background: rgba(8, 10, 14, 0.88);
   border: 1px solid rgba(212, 180, 90, 0.4);
-  padding: 32px 34px 28px;
+  padding: 28px 30px 24px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 
@@ -467,8 +469,68 @@ h1 {
 
 .difficulty {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.select-block {
+  margin-bottom: 14px;
+}
+
+.select-title {
+  font-family: "Barlow Condensed", sans-serif;
+  letter-spacing: 0.16em;
+  font-size: 16px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.planet-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.planet {
+  font-family: "Barlow Condensed", sans-serif;
+  letter-spacing: 0.1em;
+  border: 1px solid rgba(212, 180, 90, 0.35);
+  background: transparent;
+  color: var(--paper);
+  padding: 7px 11px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.planet.active {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+.planet:hover {
+  border-color: var(--paper);
+}
+
+.planet.locked,
+.planet:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: rgba(212, 180, 90, 0.15);
+}
+
+.planet.locked:hover,
+.planet:disabled:hover {
+  border-color: rgba(212, 180, 90, 0.15);
+}
+
+.planet-note {
+  font-size: 12px;
+  color: rgba(232, 226, 212, 0.7);
+  min-height: 34px;
+  margin-bottom: 4px;
 }
 
 .diff,
