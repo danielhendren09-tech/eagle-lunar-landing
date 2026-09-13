@@ -523,7 +523,7 @@ export function rebuildHoops(worldGroup, planet, count = 5) {
 }
 
 /** Astronaut-mode distress strobe. Overfly to tag, then land on the gold ring. */
-export function rebuildRescue(worldGroup, planet, enabled = true) {
+export function rebuildRescue(worldGroup, planet, enabled = true, diff = null) {
   const group = worldGroup.userData.rescueGroup;
   if (!group) return null;
   clearGroup(group);
@@ -531,8 +531,14 @@ export function rebuildRescue(worldGroup, planet, enabled = true) {
   setTerrainProfile(planet);
   const px = planet.padX || 0;
   const pz = planet.padZ || 0;
-  const x = px - 46;
-  const z = pz - 32;
+  const ax = diff?.startX ?? 90;
+  const az = diff?.startZ ?? 30;
+  const t = 0.4;
+  const alongX = px + ax * (1 - t);
+  const alongZ = pz + az * (1 - t);
+  const len = Math.hypot(ax, az) || 1;
+  const x = alongX + (-az / len) * 24;
+  const z = alongZ + (ax / len) * 24;
   const y = heightAt(x, z) + 1.15;
 
   const stem = new THREE.Mesh(
@@ -555,11 +561,15 @@ export function rebuildRescue(worldGroup, planet, enabled = true) {
   group.add(lamp);
 
   const wash = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.35, 0.35, 22, 10),
-    new THREE.MeshBasicMaterial({ color: 0xff6a2a, transparent: true, opacity: 0.16 })
+    new THREE.CylinderGeometry(0.55, 0.85, 70, 10),
+    new THREE.MeshBasicMaterial({ color: 0xff6a2a, transparent: true, opacity: 0.22 })
   );
-  wash.position.set(x, y + 12, z);
+  wash.position.set(x, y + 36, z);
   group.add(wash);
+
+  const light = new THREE.PointLight(0xff6020, 2.4, 80);
+  light.position.set(x, y + 3, z);
+  group.add(light);
 
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(10.5, 0.28, 8, 40),

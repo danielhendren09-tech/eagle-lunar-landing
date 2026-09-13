@@ -321,7 +321,7 @@ class Game {
     this.input.attitudeHold = false;
 
     this.hoops = this.lander.diff.freeFlight ? rebuildHoops(this.moon, this.planet, 5) : rebuildHoops(this.moon, this.planet, 0);
-    this.rescue = rebuildRescue(this.moon, this.planet, this.isAstronaut);
+    this.rescue = rebuildRescue(this.moon, this.planet, this.isAstronaut, this.lander.diff);
 
     if (!this.input.connected) {
       this.input.throttle = 1 / this.lander.diff.maxThrustG;
@@ -382,6 +382,8 @@ class Game {
     if (menuPct) menuPct.textContent = thrPct + "%";
     this._updateStickViz();
     this._handleDeck(dt);
+    const muteFlag = $("mute-flag");
+    if (muteFlag) muteFlag.classList.toggle("hidden", !this.audio.muted || this.state !== "fly");
 
     if (this.state === "menu" && this.input.triggerEdge) this.start();
     if (this.state === "debrief" && this.input.triggerEdge) this.start();
@@ -426,6 +428,9 @@ class Game {
       if (this.input.btnEdge[8] || this.input.btnEdge[5]) this.start();
       if (this.input.hatNavY > 0) this.showMenu();
     } else if (this.state === "fly" && this.isAstronaut) {
+      if (this.input.btnEdge[3]) {
+        this.say(this.input.attitudeHold ? "ATTITUDE HOLD" : "PGNCS RATE COMMAND", 1600);
+      }
       if (this.input.btnEdge[5]) {
         this._resetCamera();
         this.say("CAMERA RESET", 1200);
@@ -644,7 +649,9 @@ class Game {
     }
     const rescueVal = $("rescue-value");
     if (rescueVal && this.isAstronaut) {
-      rescueVal.textContent = l.rescued ? "TAGGED" : "STROBE";
+      if (l.rescued) rescueVal.textContent = "TAGGED";
+      else if (this.rescue) rescueVal.textContent = Math.round(mToFt(l.pos.distanceTo(this.rescue.pos))) + " FT";
+      else rescueVal.textContent = "STROBE";
     }
     const agc = $("agc-mode");
     if (agc && this.isAstronaut) {
@@ -750,6 +757,9 @@ class Game {
     const look = l.pos.clone();
     look.y += 1.1;
     look.lerp(ring, THREE.MathUtils.clamp((this.camElev - 0.08) / 0.7, 0, 0.82));
+    if (this.isAstronaut && this.rescue && !this.rescue.tagged) {
+      look.lerp(this.rescue.pos, 0.32);
+    }
     this.camera.up.set(0, 1, 0);
     this.camera.position.lerp(desired, 0.1);
     this.camera.lookAt(look);

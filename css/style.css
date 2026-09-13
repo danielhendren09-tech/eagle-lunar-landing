@@ -276,6 +276,19 @@ canvas#scene {
   gap: 20px;
 }
 
+.mute-flag {
+  position: absolute;
+  right: 22px;
+  top: 58px;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  font-size: 16px;
+  color: #041204;
+  background: var(--caution);
+  padding: 4px 10px;
+}
+
 .agc-mode {
   position: absolute;
   left: 50%;
@@ -397,12 +410,12 @@ canvas#scene {
 }
 
 .btn-lamp {
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.08em;
   text-align: center;
   border: 1px solid rgba(212, 180, 90, 0.22);
   color: rgba(232, 226, 212, 0.28);
-  padding: 2px 0;
+  padding: 3px 0;
 }
 
 .btn-lamp.bound {
