@@ -447,9 +447,139 @@ canvas#scene {
   color: var(--gold);
 }
 
-.controls-card.astronaut ul {
-  grid-template-columns: 1fr 1fr;
-  font-size: 12px;
+.controls-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.tour-deck {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+
+.stick-tour {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.stick-diagram-wrap {
+  text-align: center;
+}
+
+#stick-diagram {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+#stick-diagram .hot {
+  cursor: pointer;
+}
+
+#stick-diagram .hot.selected > :not(text),
+#stick-diagram .hot.selected circle,
+#stick-diagram .hot.selected path,
+#stick-diagram .hot.selected rect {
+  stroke: var(--gold);
+  filter: drop-shadow(0 0 6px rgba(212, 180, 90, 0.55));
+}
+
+#stick-diagram .hot.live > :not(text),
+#stick-diagram .hot.live circle,
+#stick-diagram .hot.live path,
+#stick-diagram .hot.live rect {
+  stroke: var(--dsky);
+}
+
+#stick-diagram .diag-label,
+#stick-diagram .diag-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  fill: rgba(232, 226, 212, 0.55);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+#stick-diagram .diag-num {
+  fill: var(--paper);
+  font-size: 7px;
+}
+
+.stick-tour:not(.astronaut) .astro-only {
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.stick-tour.astronaut .astro-only {
+  opacity: 1;
+}
+
+.tour-hint {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(232, 226, 212, 0.5);
+  line-height: 1.35;
+}
+
+.stick-tour-copy {
+  min-height: 168px;
+}
+
+.tour-kicker {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+#tour-title {
+  font-family: "Barlow Condensed", sans-serif;
+  letter-spacing: 0.1em;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+#tour-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(232, 226, 212, 0.88);
+  min-height: 72px;
+}
+
+.tour-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+#tour-step {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  min-width: 52px;
+  text-align: center;
+}
+
+.tour-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .stick-tour {
+    grid-template-columns: 1fr;
+  }
 }
 
 .hint {
@@ -476,8 +606,8 @@ canvas#scene {
 }
 
 .overlay-card {
-  width: min(720px, 100%);
-  max-height: min(92vh, 900px);
+  width: min(860px, 100%);
+  max-height: min(92vh, 960px);
   overflow-y: auto;
   background: rgba(8, 10, 14, 0.88);
   border: 1px solid rgba(212, 180, 90, 0.4);

@@ -6,6 +6,8 @@ Recreate Neil Armstrong’s last minutes over the Sea of Tranquility. Built for 
 
 Chrome or Safari. Plug in the stick, open the link, press the trigger.
 
+The briefing has a diagram of the Extreme 3D Pro. Click a part — or wiggle the real stick — and a short tour tells you what it does. Astronaut mode labels the rest of the twelve buttons.
+
 ## Stick
 
 | Control | What it does |

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Input, DIFFICULTY, DIFF_ORDER, STICK_BUTTONS } from "./input.js";
+import { StickTour } from "./tutorial.js";
 import { Audio } from "./audio.js";
 import { PLANETS, PLANET_ORDER } from "./planets.js";
 import {
@@ -34,6 +35,7 @@ const $ = (id) => document.getElementById(id);
 class Game {
   constructor() {
     this.input = new Input();
+    this.tour = new StickTour();
     this.audio = new Audio();
     this.difficulty = "cadet";
     this.planetId = "moon";
@@ -117,6 +119,7 @@ class Game {
     this._buildPlanetButtons();
     this._buildButtonGrid();
     this._bindUi();
+    this.tour.bind();
     this._applyPlanet(this.planetId);
     this._setDifficulty(this.difficulty, false);
     window.addEventListener("resize", () => this._resize());
@@ -239,11 +242,8 @@ class Game {
 
   _syncControlsCard() {
     const card = $("controls-card");
-    const basic = $("controls-basic");
-    const astro = $("controls-astronaut");
     if (card) card.classList.toggle("astronaut", this.isAstronaut);
-    if (basic) basic.classList.toggle("hidden", this.isAstronaut);
-    if (astro) astro.classList.toggle("hidden", !this.isAstronaut);
+    this.tour.setAstronaut(this.isAstronaut);
     const fine = $("controls-fine");
     if (fine) {
       fine.textContent = this.isAstronaut
@@ -381,6 +381,7 @@ class Game {
     if (menuFill) menuFill.style.width = thrPct + "%";
     if (menuPct) menuPct.textContent = thrPct + "%";
     this._updateStickViz();
+    this.tour.syncLive(this.input, this.state === "menu");
     this._handleDeck(dt);
     const muteFlag = $("mute-flag");
     if (muteFlag) muteFlag.classList.toggle("hidden", !this.audio.muted || this.state !== "fly");

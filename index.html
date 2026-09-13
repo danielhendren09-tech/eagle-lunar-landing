@@ -111,29 +111,115 @@
             gently before the fuel gauge hits empty.
           </p>
           <div class="controls-card" id="controls-card">
-            <h2>Controls</h2>
-            <ul id="controls-basic">
-              <li><strong>Throttle slider</strong> — descent engine (this is your most important control)</li>
-              <li><strong>Stick</strong> — tilt Eagle so thrust steers you sideways</li>
-              <li><strong>Twist</strong> — yaw (turn to face the landing site)</li>
-              <li><strong>Hat (coolie hat on top)</strong> — look around. Push it forward to look down on the gold ring. Left/right orbits. The view stays until you hat it back.</li>
-              <li><strong>Trigger</strong> — start / continue</li>
-              <li><strong>Thumb button</strong> — chase camera or window view</li>
-            </ul>
-            <ul id="controls-astronaut" class="hidden">
-              <li><strong>Slider</strong> — engine, with a hover detent (wider on Jupiter)</li>
-              <li><strong>Stick</strong> — tilt · <strong>hold 5</strong> to RCS-translate instead</li>
-              <li><strong>Twist</strong> — yaw</li>
-              <li><strong>Hat</strong> — peek (releases back) · menu D-pad on briefing</li>
-              <li><strong>Trigger</strong> — start · hold to abort</li>
-              <li><strong>Thumb</strong> — chase / window</li>
-              <li><strong>3 CUT</strong> — engine stop · slider idle clicks it off</li>
-              <li><strong>4 HLD</strong> — AGC attitude hold / PGNCS rates</li>
-              <li><strong>6 CAM</strong> — reset view to chase</li>
-              <li><strong>7 / 8</strong> — cycle world / mode</li>
-              <li><strong>9 ABR</strong> — abort / fly again</li>
-              <li><strong>10 / 11 / 12</strong> — mute · invert throttle · invert pitch</li>
-            </ul>
+            <div class="controls-head">
+              <h2>Logitech Extreme 3D Pro</h2>
+              <span class="tour-deck" id="tour-deck">STANDARD DECK</span>
+            </div>
+            <div class="stick-tour" id="stick-tour">
+              <div class="stick-diagram-wrap">
+                <svg id="stick-diagram" viewBox="0 0 300 380" role="img" aria-label="Diagram of the Logitech Extreme 3D Pro joystick">
+                  <defs>
+                    <linearGradient id="gripGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0" stop-color="#3a3e44" />
+                      <stop offset="0.45" stop-color="#1c1f24" />
+                      <stop offset="1" stop-color="#2c3036" />
+                    </linearGradient>
+                    <linearGradient id="baseGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#2a2e34" />
+                      <stop offset="1" stop-color="#121418" />
+                    </linearGradient>
+                    <linearGradient id="silverGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#e8eaee" />
+                      <stop offset="1" stop-color="#8a9098" />
+                    </linearGradient>
+                  </defs>
+
+                  <g id="diag-base">
+                    <path d="M36 252 C40 236, 86 228, 150 230 C214 232, 262 246, 266 268 L262 348 C258 360, 40 360, 38 346 Z" fill="url(#baseGrad)" stroke="#5a4a20" stroke-width="1.4" />
+                    <path d="M52 246 C90 238, 200 240, 248 258" fill="none" stroke="#d4b45a" stroke-width="1.1" opacity="0.45" />
+                  </g>
+
+                  <g class="hot" data-part="slider">
+                    <rect x="48" y="258" width="22" height="86" rx="7" fill="#0b0d10" stroke="#8a7030" stroke-width="1.2" />
+                    <circle id="diag-slider-knob" cx="59" cy="318" r="8" fill="url(#silverGrad)" stroke="#d4b45a" stroke-width="1" />
+                    <text x="59" y="356" text-anchor="middle" class="diag-label">SLIDER</text>
+                  </g>
+
+                  <g class="hot astro-only" data-part="baseNav">
+                    <circle cx="168" cy="286" r="7" fill="#2a2e34" stroke="#8a7030" />
+                    <circle cx="188" cy="286" r="7" fill="#2a2e34" stroke="#8a7030" />
+                    <circle cx="208" cy="286" r="7" fill="#2a2e34" stroke="#8a7030" />
+                    <text x="168" y="289" text-anchor="middle" class="diag-num">7</text>
+                    <text x="188" y="289" text-anchor="middle" class="diag-num">8</text>
+                    <text x="208" y="289" text-anchor="middle" class="diag-num">9</text>
+                  </g>
+                  <g class="hot astro-only" data-part="baseSys">
+                    <circle cx="168" cy="310" r="7" fill="#2a2e34" stroke="#8a7030" />
+                    <circle cx="188" cy="310" r="7" fill="#2a2e34" stroke="#8a7030" />
+                    <circle cx="208" cy="310" r="7" fill="#2a2e34" stroke="#8a7030" />
+                    <text x="168" y="313" text-anchor="middle" class="diag-num">10</text>
+                    <text x="188" y="313" text-anchor="middle" class="diag-num">11</text>
+                    <text x="208" y="313" text-anchor="middle" class="diag-num">12</text>
+                  </g>
+                  <text x="188" y="332" text-anchor="middle" class="diag-label astro-only">BASE</text>
+
+                  <g id="diag-stick">
+                    <g class="hot" data-part="stick">
+                      <path d="M154 248 C150 220, 148 190, 152 158 C156 140, 180 138, 184 158 C188 186, 186 220, 182 248 Z" fill="url(#gripGrad)" stroke="#6a6e74" stroke-width="1.2" />
+                    </g>
+                    <g id="diag-twist" class="hot" data-part="twist">
+                      <path d="M156 200 H180" stroke="#d4b45a" stroke-width="1.4" opacity="0.7" />
+                      <path d="M157 210 H179" stroke="#d4b45a" stroke-width="1.2" opacity="0.45" />
+                      <text x="198" y="208" class="diag-label">TWIST</text>
+                    </g>
+                    <g class="hot" data-part="trigger">
+                      <path d="M150 176 C138 180, 132 196, 138 210 C144 218, 152 214, 154 200 Z" fill="#4a4e54" stroke="#c8ccd0" stroke-width="1.1" />
+                      <text x="118" y="198" text-anchor="end" class="diag-label">TRIG</text>
+                    </g>
+                    <g class="hot" data-part="thumb">
+                      <circle cx="150" cy="168" r="7" fill="#3a3e44" stroke="#d4b45a" stroke-width="1.1" />
+                      <text x="118" y="172" text-anchor="end" class="diag-label">THUMB</text>
+                    </g>
+                    <path d="M158 150 C160 132, 176 128, 180 146" fill="#2a2e34" stroke="#8a9098" stroke-width="1" />
+                    <g class="hot astro-only" data-part="cut">
+                      <circle cx="156" cy="124" r="6.5" fill="#2a2e34" stroke="#8a7030" />
+                      <text x="156" y="127" text-anchor="middle" class="diag-num">3</text>
+                    </g>
+                    <g class="hot astro-only" data-part="hold">
+                      <circle cx="182" cy="124" r="6.5" fill="#2a2e34" stroke="#8a7030" />
+                      <text x="182" y="127" text-anchor="middle" class="diag-num">4</text>
+                    </g>
+                    <g class="hot astro-only" data-part="rcs">
+                      <circle cx="156" cy="142" r="6.5" fill="#2a2e34" stroke="#8a7030" />
+                      <text x="156" y="145" text-anchor="middle" class="diag-num">5</text>
+                    </g>
+                    <g class="hot astro-only" data-part="cam">
+                      <circle cx="182" cy="142" r="6.5" fill="#2a2e34" stroke="#8a7030" />
+                      <text x="182" y="145" text-anchor="middle" class="diag-num">6</text>
+                    </g>
+                    <g class="hot" data-part="hat">
+                      <circle cx="169" cy="112" r="11" fill="#1a1d22" stroke="#c8ccd0" stroke-width="1.4" />
+                      <circle cx="169" cy="112" r="4.5" fill="#8a9098" />
+                      <path d="M169 104 V108 M169 116 V120 M161 112 H165 M173 112 H177" stroke="#e8e2d4" stroke-width="1" />
+                      <text x="169" y="96" text-anchor="middle" class="diag-label">HAT</text>
+                    </g>
+                  </g>
+                </svg>
+                <p class="tour-hint">Click a part, or move the stick — the diagram follows you.</p>
+              </div>
+              <div class="stick-tour-copy">
+                <p class="tour-kicker">STICK TOUR</p>
+                <h3 id="tour-title">Throttle slider</h3>
+                <p id="tour-body">
+                  Left side of the base. This is the descent engine — the most important control. Idle is toward you; full is away.
+                </p>
+                <div class="tour-nav">
+                  <button type="button" id="tour-prev" class="ghost tour-btn">Prev</button>
+                  <span id="tour-step">1 / 6</span>
+                  <button type="button" id="tour-next" class="ghost tour-btn">Next</button>
+                </div>
+              </div>
+            </div>
             <p class="fine" id="controls-fine">Keyboard backup: arrows tilt · Q/E yaw · Shift/Ctrl or 1/2/3 throttle · I/K look down or chase · J/L orbit · C window · R restart</p>
             <div class="menu-throttle">
               <span>THROTTLE</span>
