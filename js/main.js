@@ -757,9 +757,6 @@ class Game {
     const look = l.pos.clone();
     look.y += 1.1;
     look.lerp(ring, THREE.MathUtils.clamp((this.camElev - 0.08) / 0.7, 0, 0.82));
-    if (this.isAstronaut && this.rescue && !this.rescue.tagged) {
-      look.lerp(this.rescue.pos, 0.32);
-    }
     this.camera.up.set(0, 1, 0);
     this.camera.position.lerp(desired, 0.1);
     this.camera.lookAt(look);

@@ -533,12 +533,12 @@ export function rebuildRescue(worldGroup, planet, enabled = true, diff = null) {
   const pz = planet.padZ || 0;
   const ax = diff?.startX ?? 90;
   const az = diff?.startZ ?? 30;
-  const t = 0.4;
+  const t = 0.18;
   const alongX = px + ax * (1 - t);
   const alongZ = pz + az * (1 - t);
   const len = Math.hypot(ax, az) || 1;
-  const x = alongX + (-az / len) * 24;
-  const z = alongZ + (ax / len) * 24;
+  const x = alongX + (-az / len) * 16;
+  const z = alongZ + (ax / len) * 16;
   const y = heightAt(x, z) + 1.15;
 
   const stem = new THREE.Mesh(
