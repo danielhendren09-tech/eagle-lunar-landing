@@ -312,12 +312,15 @@ export function createMoon() {
   group.add(hazardGroup);
   const hoopGroup = new THREE.Group();
   group.add(hoopGroup);
+  const rescueGroup = new THREE.Group();
+  group.add(rescueGroup);
 
   group.userData.surface = mesh;
   group.userData.baseXZ = baseXZ;
   group.userData.padGroup = padGroup;
   group.userData.hazardGroup = hazardGroup;
   group.userData.hoopGroup = hoopGroup;
+  group.userData.rescueGroup = rescueGroup;
 
   return { group, boulders: [], hoops: [] };
 }
@@ -470,6 +473,7 @@ export function applyWorldLayout(worldGroup, planet) {
   }
 
   if (hoopGroup) clearGroup(hoopGroup);
+  if (worldGroup.userData.rescueGroup) clearGroup(worldGroup.userData.rescueGroup);
   return boulders;
 }
 
@@ -516,6 +520,63 @@ export function rebuildHoops(worldGroup, planet, count = 5) {
     });
   }
   return hoops;
+}
+
+/** Astronaut-mode distress strobe. Overfly to tag, then land on the gold ring. */
+export function rebuildRescue(worldGroup, planet, enabled = true) {
+  const group = worldGroup.userData.rescueGroup;
+  if (!group) return null;
+  clearGroup(group);
+  if (!enabled) return null;
+  setTerrainProfile(planet);
+  const px = planet.padX || 0;
+  const pz = planet.padZ || 0;
+  const x = px - 46;
+  const z = pz - 32;
+  const y = heightAt(x, z) + 1.15;
+
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.28, 2.4, 8),
+    new THREE.MeshStandardMaterial({ color: 0x8a9098, metalness: 0.55, roughness: 0.4 })
+  );
+  stem.position.set(x, y + 0.4, z);
+  group.add(stem);
+
+  const lamp = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 16, 12),
+    new THREE.MeshStandardMaterial({
+      color: 0xff6a2a,
+      emissive: 0xff4010,
+      emissiveIntensity: 1.2,
+      roughness: 0.3,
+    })
+  );
+  lamp.position.set(x, y + 1.85, z);
+  group.add(lamp);
+
+  const wash = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.35, 0.35, 22, 10),
+    new THREE.MeshBasicMaterial({ color: 0xff6a2a, transparent: true, opacity: 0.16 })
+  );
+  wash.position.set(x, y + 12, z);
+  group.add(wash);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(10.5, 0.28, 8, 40),
+    new THREE.MeshBasicMaterial({ color: 0xff8a40, transparent: true, opacity: 0.55 })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(x, y + 0.15, z);
+  group.add(ring);
+
+  return {
+    pos: new THREE.Vector3(x, y + 1.2, z),
+    r: 13,
+    tagged: false,
+    lamp,
+    wash,
+    ring,
+  };
 }
 
 export function createEarth() {
@@ -781,6 +842,9 @@ export class Lander {
     this.vel = new THREE.Vector3((dx / range) * d.startHoriz, sink, (dz / range) * d.startHoriz);
     this.impactVs = 0;
     this.impactHs = 0;
+    this.rcsFuel = d.astronaut ? d.rcsFuel ?? 1 : 0;
+    this.rcsFuelMax = this.rcsFuel;
+    this.rescued = false;
     this.mesh.position.copy(this.pos);
     this.mesh.rotation.set(this.pitch, this.yaw, this.roll, "YXZ");
   }
@@ -796,16 +860,40 @@ export class Lander {
 
     const d = this.diff;
     const g = this.gravity;
-    if (d.directAttitude) {
+    const translate = d.astronaut && input.translateMode && this.rcsFuel > 0;
+    const hold = d.astronaut && input.attitudeHold;
+    const hoverAssist = d.astronaut && g >= (d.hoverAssistG ?? 20);
+
+    if (hold) {
+      const settle = hoverAssist ? 0.0006 : 0.002;
+      this.pitch = THREE.MathUtils.lerp(this.pitch, 0, 1 - Math.pow(settle, dt));
+      this.roll = THREE.MathUtils.lerp(this.roll, 0, 1 - Math.pow(settle, dt));
+      if (!translate && (Math.abs(input.pitch) > 0.12 || Math.abs(input.roll) > 0.12)) {
+        this.pitch = THREE.MathUtils.lerp(this.pitch, input.pitch * 0.28, 1 - Math.pow(0.02, dt));
+        this.roll = THREE.MathUtils.lerp(this.roll, input.roll * 0.28, 1 - Math.pow(0.02, dt));
+      }
+    } else if (d.directAttitude) {
       this.pitch = THREE.MathUtils.lerp(this.pitch, input.pitch * 0.38, 1 - Math.pow(0.001, dt));
       this.roll = THREE.MathUtils.lerp(this.roll, input.roll * 0.38, 1 - Math.pow(0.001, dt));
-    } else {
+    } else if (!translate) {
       this.pitch += input.pitch * 0.85 * dt;
       this.roll += input.roll * 0.85 * dt;
       this.pitch = THREE.MathUtils.clamp(this.pitch, -0.7, 0.7);
       this.roll = THREE.MathUtils.clamp(this.roll, -0.7, 0.7);
     }
     this.yaw += input.yaw * 1.1 * dt;
+
+    if (translate && this.rcsFuel > 0) {
+      const right = input.roll;
+      const forward = -input.pitch;
+      const stickMag = Math.hypot(right, forward);
+      if (stickMag > 0.08) {
+        const accel = d.rcsAccel ?? 3.4;
+        this.vel.x += (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * right) * accel * dt;
+        this.vel.z += (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * right) * accel * dt;
+        this.rcsFuel = Math.max(0, this.rcsFuel - stickMag * 0.16 * dt);
+      }
+    }
 
     const throttle = this.fuel > 0 || d.freeFlight ? input.throttle : 0;
     if (d.freeFlight) {
@@ -885,9 +973,16 @@ export class Lander {
           this.failReason = "Hard impact. In Free mode you can take soft landings — this wasn't one.";
         }
       } else if (soft && onPad) {
-        this.landed = true;
-        this.alive = false;
-        this.vel.set(0, 0, 0);
+        if (d.astronaut && !this.rescued) {
+          this.crashed = true;
+          this.alive = false;
+          this.vel.set(0, 0, 0);
+          this.failReason = "You landed before tagging the distress beacon. Overfly the strobe, then the gold ring.";
+        } else {
+          this.landed = true;
+          this.alive = false;
+          this.vel.set(0, 0, 0);
+        }
       } else {
         this.crashed = true;
         this.alive = false;

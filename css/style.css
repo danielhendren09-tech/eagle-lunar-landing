@@ -91,7 +91,7 @@ canvas#scene {
   letter-spacing: 0.12em;
   color: var(--gold);
   text-align: right;
-  max-width: 260px;
+  max-width: 320px;
 }
 
 .hud-left,
@@ -276,8 +276,25 @@ canvas#scene {
   gap: 20px;
 }
 
+.agc-mode {
+  position: absolute;
+  left: 50%;
+  top: 58px;
+  transform: translateX(-50%);
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  font-size: 14px;
+  color: var(--dsky);
+  text-shadow: 0 0 12px rgba(124, 255, 107, 0.35);
+}
+
+.agc-mode.hold {
+  color: var(--caution);
+}
+
 .stick-viz {
-  width: 168px;
+  width: 220px;
 }
 
 .stick-cross {
@@ -311,7 +328,8 @@ canvas#scene {
   height: 1px;
 }
 
-#stick-dot {
+#stick-dot,
+#hat-dot {
   position: absolute;
   width: 10px;
   height: 10px;
@@ -323,15 +341,79 @@ canvas#scene {
   box-shadow: 0 0 8px var(--dsky);
 }
 
-.throttle-track {
+#hat-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--gold);
+  box-shadow: none;
+  opacity: 0.35;
+}
+
+#hat-dot.on {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--gold);
+}
+
+.twist-track {
   display: inline-block;
-  width: 14px;
+  width: 12px;
   height: 84px;
-  margin-left: 10px;
+  margin-left: 8px;
   border: 1px solid rgba(212, 180, 90, 0.4);
   background: #111;
   position: relative;
   vertical-align: bottom;
+}
+
+#twist-fill {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.throttle-track {
+  display: inline-block;
+  width: 14px;
+  height: 84px;
+  margin-left: 8px;
+  border: 1px solid rgba(212, 180, 90, 0.4);
+  background: #111;
+  position: relative;
+  vertical-align: bottom;
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin-top: 8px;
+  width: 210px;
+}
+
+.btn-lamp {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  border: 1px solid rgba(212, 180, 90, 0.22);
+  color: rgba(232, 226, 212, 0.28);
+  padding: 2px 0;
+}
+
+.btn-lamp.bound {
+  color: rgba(232, 226, 212, 0.62);
+  border-color: rgba(212, 180, 90, 0.4);
+}
+
+.btn-lamp.on {
+  color: var(--ink);
+  background: var(--dsky);
+  border-color: var(--dsky);
 }
 
 #throttle-fill {
@@ -345,11 +427,16 @@ canvas#scene {
 
 .stick-captions {
   display: flex;
-  gap: 28px;
+  gap: 18px;
   margin-top: 6px;
   font-size: 9px;
   letter-spacing: 0.16em;
   color: var(--gold);
+}
+
+.controls-card.astronaut ul {
+  grid-template-columns: 1fr 1fr;
+  font-size: 12px;
 }
 
 .hint {

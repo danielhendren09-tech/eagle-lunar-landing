@@ -56,6 +56,14 @@
             <div class="tape-label">RINGS</div>
             <div class="tape-value" id="rings-value">0/5</div>
           </div>
+          <div class="tape hidden" id="rcs-tape">
+            <div class="tape-label">RCS</div>
+            <div class="tape-value" id="rcs-value">100%</div>
+          </div>
+          <div class="tape hidden" id="rescue-tape">
+            <div class="tape-label">SURVEY</div>
+            <div class="tape-value" id="rescue-value">STROBE</div>
+          </div>
         </div>
 
         <div class="adi-wrap">
@@ -66,16 +74,23 @@
           </div>
         </div>
 
+        <div id="agc-mode" class="agc-mode hidden">PGNCS</div>
         <div id="contact-light" class="contact-light">CONTACT LIGHT</div>
         <div id="alarm" class="alarm">1202 PROGRAM ALARM</div>
 
         <div class="hud-bottom">
           <div class="stick-viz" id="stick-viz">
-            <div class="stick-cross"><div id="stick-dot"></div></div>
+            <div class="stick-cross">
+              <div id="stick-dot"></div>
+              <div id="hat-dot"></div>
+            </div>
+            <div class="twist-track"><div id="twist-fill"></div></div>
             <div class="throttle-track"><div id="throttle-fill"></div></div>
+            <div class="btn-grid" id="btn-grid"></div>
             <div class="stick-captions">
-              <span>STICK</span>
-              <span>THROTTLE</span>
+              <span>STICK / HAT</span>
+              <span>TWIST</span>
+              <span>THR</span>
             </div>
           </div>
           <div class="hint" id="live-hint">
@@ -94,9 +109,9 @@
             You have one job: fly <em>Eagle</em> to a clear patch and set her down
             gently before the fuel gauge hits empty.
           </p>
-          <div class="controls-card">
+          <div class="controls-card" id="controls-card">
             <h2>Controls</h2>
-            <ul>
+            <ul id="controls-basic">
               <li><strong>Throttle slider</strong> — descent engine (this is your most important control)</li>
               <li><strong>Stick</strong> — tilt Eagle so thrust steers you sideways</li>
               <li><strong>Twist</strong> — yaw (turn to face the landing site)</li>
@@ -104,7 +119,21 @@
               <li><strong>Trigger</strong> — start / continue</li>
               <li><strong>Thumb button</strong> — chase camera or window view</li>
             </ul>
-            <p class="fine">Keyboard backup: arrows tilt · Q/E yaw · Shift/Ctrl or 1/2/3 throttle · I/K look down or chase · J/L orbit · C window · R restart</p>
+            <ul id="controls-astronaut" class="hidden">
+              <li><strong>Slider</strong> — engine, with a hover detent (wider on Jupiter)</li>
+              <li><strong>Stick</strong> — tilt · <strong>hold 5</strong> to RCS-translate instead</li>
+              <li><strong>Twist</strong> — yaw</li>
+              <li><strong>Hat</strong> — peek (releases back) · menu D-pad on briefing</li>
+              <li><strong>Trigger</strong> — start · hold to abort</li>
+              <li><strong>Thumb</strong> — chase / window</li>
+              <li><strong>3 CUT</strong> — engine stop · slider idle clicks it off</li>
+              <li><strong>4 HLD</strong> — AGC attitude hold / PGNCS rates</li>
+              <li><strong>6 CAM</strong> — reset view to chase</li>
+              <li><strong>7 / 8</strong> — cycle world / mode</li>
+              <li><strong>9 ABR</strong> — abort / fly again</li>
+              <li><strong>10 / 11 / 12</strong> — mute · invert throttle · invert pitch</li>
+            </ul>
+            <p class="fine" id="controls-fine">Keyboard backup: arrows tilt · Q/E yaw · Shift/Ctrl or 1/2/3 throttle · I/K look down or chase · J/L orbit · C window · R restart</p>
             <div class="menu-throttle">
               <span>THROTTLE</span>
               <div class="menu-throttle-track"><div id="menu-throttle-fill"></div></div>
@@ -123,6 +152,7 @@
               <button data-diff="pilot" class="diff">Pilot</button>
               <button data-diff="commander" class="diff">Commander</button>
               <button data-diff="apollo" class="diff">Apollo</button>
+              <button data-diff="astronaut" class="diff">Astronaut</button>
               <button data-diff="free" class="diff">Free</button>
             </div>
             <p class="diff-note" id="diff-note">
@@ -132,6 +162,7 @@
           <div class="actions">
             <button id="btn-start" class="primary">PRESS TRIGGER TO START</button>
             <button id="btn-invert" class="ghost">Invert throttle</button>
+            <button id="btn-invert-pitch" class="ghost">Invert pitch</button>
           </div>
           <p id="pad-line" class="pad-line">Plug in the joystick, then slide the throttle — watch the bar.</p>
         </div>

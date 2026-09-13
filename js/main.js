@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Input, DIFFICULTY } from "./input.js";
+import { Input, DIFFICULTY, DIFF_ORDER, STICK_BUTTONS } from "./input.js";
 import { Audio } from "./audio.js";
 import { PLANETS, PLANET_ORDER } from "./planets.js";
 import {
@@ -11,6 +11,7 @@ import {
   createHorizon,
   applyWorldLayout,
   rebuildHoops,
+  rebuildRescue,
   getPadWorldPos,
   getEscapeAlt,
   heightAt,
@@ -25,6 +26,7 @@ const NOTES = {
   commander: DIFFICULTY.commander.note,
   free: DIFFICULTY.free.note,
   apollo: DIFFICULTY.apollo.note,
+  astronaut: DIFFICULTY.astronaut.note,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -53,6 +55,12 @@ class Game {
     this.ringsDone = false;
     this.escapeWarned = false;
     this.earth = null;
+    this.rescue = null;
+    this.hoverAssistCalled = false;
+    this.camPeekElev = 0;
+    this.camPeekOrbit = 0;
+    this._cutWas = false;
+    this._hoverWas = false;
 
     this.canvas = $("scene");
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: "high-performance" });
@@ -107,8 +115,10 @@ class Game {
     this.lander = new Lander(this.eagleMesh, DIFFICULTY.cadet, PLANETS.moon.gravity);
 
     this._buildPlanetButtons();
+    this._buildButtonGrid();
     this._bindUi();
     this._applyPlanet(this.planetId);
+    this._setDifficulty(this.difficulty, false);
     window.addEventListener("resize", () => this._resize());
     this.last = performance.now();
     requestAnimationFrame((t) => this.loop(t));
@@ -120,6 +130,10 @@ class Game {
 
   get isApollo() {
     return !!DIFFICULTY[this.difficulty]?.apollo;
+  }
+
+  get isAstronaut() {
+    return !!DIFFICULTY[this.difficulty]?.astronaut;
   }
 
   _buildPlanetButtons() {
@@ -165,6 +179,7 @@ class Game {
     $("brief-kicker").textContent = p.site;
     this.boulders = applyWorldLayout(this.moon, p);
     this.hoops = [];
+    this.rescue = null;
     if (this.dust) this.dust.material.color.setHex(p.dust);
     if (this.scene.fog) this.scene.fog.color.setHex(p.fog || 0x050508);
     if (this.earth) this.earth.visible = id === "moon" || id === "earth";
@@ -172,21 +187,108 @@ class Game {
 
   _bindUi() {
     document.querySelectorAll(".diff").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".diff").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.difficulty = btn.dataset.diff;
-        $("diff-note").textContent = NOTES[this.difficulty];
-        this._syncPlanetLock();
-      });
+      btn.addEventListener("click", () => this._setDifficulty(btn.dataset.diff));
     });
     $("btn-start").addEventListener("click", () => this.start());
-    $("btn-invert").addEventListener("click", () => {
-      this.input.invertThrottle = !this.input.invertThrottle;
-      $("btn-invert").textContent = this.input.invertThrottle ? "Throttle inverted" : "Invert throttle";
-    });
+    $("btn-invert").addEventListener("click", () => this._toggleThrottleInvert());
+    const pitchBtn = $("btn-invert-pitch");
+    if (pitchBtn) pitchBtn.addEventListener("click", () => this._togglePitchInvert());
     $("btn-again").addEventListener("click", () => this.start());
     $("btn-menu").addEventListener("click", () => this.showMenu());
+  }
+
+  _buildButtonGrid() {
+    const grid = $("btn-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    STICK_BUTTONS.forEach((b) => {
+      const el = document.createElement("span");
+      el.className = "btn-lamp";
+      el.dataset.btn = String(b.id);
+      el.textContent = b.short;
+      el.title = b.name;
+      grid.appendChild(el);
+    });
+  }
+
+  _setDifficulty(id, sync = true) {
+    if (!DIFFICULTY[id]) return;
+    this.difficulty = id;
+    this.input.setScheme(DIFFICULTY[id], this.planet.gravity);
+    document.querySelectorAll(".diff").forEach((b) => b.classList.toggle("active", b.dataset.diff === id));
+    $("diff-note").textContent = NOTES[id] || "";
+    this._syncPlanetLock();
+    this._syncControlsCard();
+    if (sync) this._syncInvertLabels();
+  }
+
+  _cycleDifficulty(dir) {
+    const i = DIFF_ORDER.indexOf(this.difficulty);
+    const next = DIFF_ORDER[(i + dir + DIFF_ORDER.length) % DIFF_ORDER.length];
+    this._setDifficulty(next);
+  }
+
+  _cyclePlanet(dir) {
+    if (this.isApollo) return;
+    const i = PLANET_ORDER.indexOf(this.planetId);
+    const next = PLANET_ORDER[(i + dir + PLANET_ORDER.length) % PLANET_ORDER.length];
+    document.querySelectorAll(".planet").forEach((b) => b.classList.toggle("active", b.dataset.planet === next));
+    this._applyPlanet(next);
+    this.input.setScheme(DIFFICULTY[this.difficulty], this.planet.gravity);
+  }
+
+  _syncControlsCard() {
+    const card = $("controls-card");
+    const basic = $("controls-basic");
+    const astro = $("controls-astronaut");
+    if (card) card.classList.toggle("astronaut", this.isAstronaut);
+    if (basic) basic.classList.toggle("hidden", this.isAstronaut);
+    if (astro) astro.classList.toggle("hidden", !this.isAstronaut);
+    const fine = $("controls-fine");
+    if (fine) {
+      fine.textContent = this.isAstronaut
+        ? "Keyboard: arrows tilt · Q/E yaw · Shift/Ctrl throttle · X cutoff · H hold · T RCS · V camera · IJKL hat/menu · comma/period world/mode · M mute · U/P invert · Backspace abort · R restart"
+        : "Keyboard backup: arrows tilt · Q/E yaw · Shift/Ctrl or 1/2/3 throttle · I/K look down or chase · J/L orbit · C window · R restart";
+    }
+  }
+
+  _syncInvertLabels() {
+    const thr = $("btn-invert");
+    const pit = $("btn-invert-pitch");
+    if (thr) thr.textContent = this.input.invertThrottle ? "Throttle inverted" : "Invert throttle";
+    if (pit) pit.textContent = this.input.invertPitch ? "Pitch inverted" : "Invert pitch";
+  }
+
+  _toggleThrottleInvert() {
+    this.input.invertThrottle = !this.input.invertThrottle;
+    this._syncInvertLabels();
+  }
+
+  _togglePitchInvert() {
+    this.input.invertPitch = !this.input.invertPitch;
+    this._syncInvertLabels();
+  }
+
+  _toggleMute() {
+    const muted = this.audio.toggleMute();
+    this.say(muted ? "AUDIO MUTED" : "AUDIO LIVE", 1600);
+  }
+
+  _resetCamera() {
+    this.cameraMode = "chase";
+    this.camElev = 0;
+    this.camOrbit = 0;
+    this.camPeekElev = 0;
+    this.camPeekOrbit = 0;
+  }
+
+  _abort(reason) {
+    if (this.state !== "fly" || !this.lander.alive) return;
+    this.lander.crashed = true;
+    this.lander.alive = false;
+    this.lander.impactVs = Math.abs(Math.min(0, this.lander.vel.y));
+    this.lander.impactHs = Math.hypot(this.lander.vel.x, this.lander.vel.z);
+    this.lander.failReason = reason || "Abort. You punched out.";
   }
 
   async start() {
@@ -205,12 +307,21 @@ class Game {
     this.apolloPitch = false;
     this.ringsDone = false;
     this.escapeWarned = false;
+    this.hoverAssistCalled = this.planet.gravity >= (DIFFICULTY[this.difficulty].hoverAssistG ?? 20);
     this.cameraMode = "chase";
     this.camElev = 0;
     this.camOrbit = 0;
+    this.camPeekElev = 0;
+    this.camPeekOrbit = 0;
+    this._cutWas = false;
+    this._hoverWas = false;
     this.state = "fly";
+    this.input.setScheme(this.lander.diff, this.planet.gravity);
+    this.input.engineCut = false;
+    this.input.attitudeHold = false;
 
     this.hoops = this.lander.diff.freeFlight ? rebuildHoops(this.moon, this.planet, 5) : rebuildHoops(this.moon, this.planet, 0);
+    this.rescue = rebuildRescue(this.moon, this.planet, this.isAstronaut);
 
     if (!this.input.connected) {
       this.input.throttle = 1 / this.lander.diff.maxThrustG;
@@ -218,13 +329,22 @@ class Game {
     $("overlay").classList.add("hidden");
     $("debrief").classList.add("hidden");
     $("hud").classList.remove("hidden");
-    $("mission-label").textContent = this.isApollo ? "APOLLO 11" : this.planet.label.toUpperCase();
+    $("mission-label").textContent = this.isApollo ? "APOLLO 11" : this.isAstronaut ? "ASTRONAUT" : this.planet.label.toUpperCase();
     const ringsHud = $("rings-tape");
     if (ringsHud) ringsHud.classList.toggle("hidden", !this.lander.diff.freeFlight);
+    const rcsHud = $("rcs-tape");
+    if (rcsHud) rcsHud.classList.toggle("hidden", !this.isAstronaut);
+    const rescueHud = $("rescue-tape");
+    if (rescueHud) rescueHud.classList.toggle("hidden", !this.isAstronaut);
+    const agc = $("agc-mode");
+    if (agc) agc.classList.toggle("hidden", !this.isAstronaut);
     this.audio.setMusic(true);
 
     if (this.isApollo) {
       this.say("HOUSTON — EAGLE, YOU'RE GO FOR POWERED DESCENT.", 4200);
+    } else if (this.isAstronaut) {
+      const hover = this.hoverAssistCalled ? " · HOVER ASSIST" : "";
+      this.say(`ASTRONAUT · TAG THE STROBE, THEN THE GOLD RING · ${this.planet.label.toUpperCase()}${hover}`, 4200);
     } else if (this.lander.diff.freeFlight) {
       this.say(`FREE FLIGHT · ${this.planet.label.toUpperCase()} · FLY THE RINGS · DON'T ESCAPE`);
     } else {
@@ -239,7 +359,8 @@ class Game {
     $("debrief").classList.add("hidden");
     $("hud").classList.add("hidden");
     $("overlay").classList.remove("hidden");
-    $("btn-invert").textContent = this.input.invertThrottle ? "Throttle inverted" : "Invert throttle";
+    this._syncInvertLabels();
+    this._syncControlsCard();
   }
 
   say(text, ms = 2800) {
@@ -251,6 +372,7 @@ class Game {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     this.input.poll();
+    this.input.setScheme(DIFFICULTY[this.difficulty], this.planet.gravity);
     $("pad-line").textContent = this.input.menuHint();
     $("stick-status").textContent = this.input.statusLine();
     const thrPct = Math.round(this.input.throttle * 100);
@@ -258,21 +380,22 @@ class Game {
     const menuPct = $("menu-throttle-pct");
     if (menuFill) menuFill.style.width = thrPct + "%";
     if (menuPct) menuPct.textContent = thrPct + "%";
+    this._updateStickViz();
+    this._handleDeck(dt);
 
     if (this.state === "menu" && this.input.triggerEdge) this.start();
     if (this.state === "debrief" && this.input.triggerEdge) this.start();
 
     if (this.state === "fly") {
       if (this.input.thumbEdge) this.cameraMode = this.cameraMode === "chase" ? "window" : "chase";
-      if (this.input.hatX || this.input.hatY) this.cameraMode = "chase";
-      this.camElev = THREE.MathUtils.clamp(this.camElev - this.input.hatY * 0.85 * dt, 0, 1);
-      this.camOrbit += this.input.hatX * 1.7 * dt;
+      this._updateLook(dt);
       const rNow = this.input.keys.has("KeyR");
       if (rNow && !this._rWas) this.start();
       this._rWas = rNow;
       this.lander.step(dt, this.input);
       if (!this.lander.diff.freeFlight) this._boulders();
       if (this.lander.diff.freeFlight) this._hoops();
+      if (this.isAstronaut) this._rescue(now);
       this._events(now);
       this._hud(now);
       this.audio.setEngine(this.lander.fuel > 0 || this.lander.diff.freeFlight ? this.input.throttle : 0);
@@ -286,6 +409,95 @@ class Game {
     this._camera();
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame((t) => this.loop(t));
+  }
+
+  _handleDeck(dt) {
+    if (this.input.btnEdge[9]) this._toggleMute();
+    if (this.input.btnEdge[10]) this._toggleThrottleInvert();
+    if (this.input.btnEdge[11]) this._togglePitchInvert();
+
+    if (this.state === "menu") {
+      if (this.input.hatNavX) this._cyclePlanet(this.input.hatNavX);
+      if (this.input.hatNavY) this._cycleDifficulty(this.input.hatNavY);
+      if (this.input.btnEdge[6]) this._cyclePlanet(1);
+      if (this.input.btnEdge[7]) this._cycleDifficulty(1);
+      if (this.input.btnEdge[8]) this.start();
+    } else if (this.state === "debrief") {
+      if (this.input.btnEdge[8] || this.input.btnEdge[5]) this.start();
+      if (this.input.hatNavY > 0) this.showMenu();
+    } else if (this.state === "fly" && this.isAstronaut) {
+      if (this.input.btnEdge[5]) {
+        this._resetCamera();
+        this.say("CAMERA RESET", 1200);
+      }
+      if (this.input.btnEdge[8] || this.input.triggerAbortEdge) {
+        this._abort(this.input.triggerAbortEdge ? "Trigger abort. You held it down." : "Abort. Base button 9.");
+      }
+      if (this.input.triggerHeldFor > 0.28 && this.input.triggerHeldFor < 0.65 && this.lander.alive) {
+        $("callout").textContent = "HOLD TRIGGER TO ABORT…";
+      }
+      if (this.input.engineCut && !this._cutWas) {
+        this.audio.beep(240, 0.08, 0.05);
+        this.say("ENGINE STOP", 1400);
+      }
+      if (!this.input.engineCut && this._cutWas && this.input.throttle < 0.04) {
+        this.audio.beep(180, 0.06, 0.04);
+      }
+      this._cutWas = this.input.engineCut;
+      if (this.input.hoverLatched && !this._hoverWas) this.audio.beep(520, 0.05, 0.03);
+      this._hoverWas = this.input.hoverLatched;
+    }
+  }
+
+  _updateLook(dt) {
+    if (this.isAstronaut) {
+      if (this.input.hatHeld) {
+        this.camPeekElev = THREE.MathUtils.clamp(this.camPeekElev - this.input.hatY * 0.95 * dt, -0.35, 1);
+        this.camPeekOrbit += this.input.hatX * 1.8 * dt;
+      } else {
+        this.camPeekElev = THREE.MathUtils.lerp(this.camPeekElev, 0, 1 - Math.pow(0.0008, dt));
+        this.camPeekOrbit = THREE.MathUtils.lerp(this.camPeekOrbit, 0, 1 - Math.pow(0.0008, dt));
+      }
+      return;
+    }
+    if (this.input.hatX || this.input.hatY) this.cameraMode = "chase";
+    this.camElev = THREE.MathUtils.clamp(this.camElev - this.input.hatY * 0.85 * dt, 0, 1);
+    this.camOrbit += this.input.hatX * 1.7 * dt;
+  }
+
+  _updateStickViz() {
+    const hat = $("hat-dot");
+    if (hat) {
+      hat.style.left = 50 + this.input.hatX * 38 + "%";
+      hat.style.top = 50 + this.input.hatY * 38 + "%";
+      hat.classList.toggle("on", this.input.hatHeld);
+    }
+    const twist = $("twist-fill");
+    if (twist) twist.style.top = 50 + this.input.yaw * 46 + "%";
+    document.querySelectorAll(".btn-lamp").forEach((el) => {
+      const i = Number(el.dataset.btn);
+      el.classList.toggle("on", !!this.input.btn[i]);
+      el.classList.toggle("bound", this.isAstronaut || i < 2);
+    });
+  }
+
+  _rescue(now) {
+    if (!this.rescue || this.rescue.tagged) {
+      if (this.rescue?.lamp) {
+        this.rescue.lamp.material.emissiveIntensity = 0.25;
+        if (this.rescue.wash) this.rescue.wash.material.opacity = 0.05;
+      }
+      return;
+    }
+    const pulse = 0.7 + Math.sin(now * 0.012) * 0.55;
+    if (this.rescue.lamp) this.rescue.lamp.material.emissiveIntensity = pulse;
+    if (this.rescue.wash) this.rescue.wash.material.opacity = 0.1 + pulse * 0.08;
+    if (this.lander.pos.distanceTo(this.rescue.pos) < this.rescue.r) {
+      this.rescue.tagged = true;
+      this.lander.rescued = true;
+      this.audio.hoop();
+      this.say("BEACON TAGGED — PROCEED TO THE GOLD RING.", 3600);
+    }
   }
 
   _boulders() {
@@ -425,6 +637,25 @@ class Game {
       const got = this.hoops.filter((h) => h.collected).length;
       ringsVal.textContent = `${got}/${this.hoops.length || 5}`;
     }
+    const rcsVal = $("rcs-value");
+    if (rcsVal) {
+      const rcsPct = l.rcsFuelMax ? Math.round((l.rcsFuel / l.rcsFuelMax) * 100) : 0;
+      rcsVal.textContent = this.isAstronaut ? rcsPct + "%" : "—";
+    }
+    const rescueVal = $("rescue-value");
+    if (rescueVal && this.isAstronaut) {
+      rescueVal.textContent = l.rescued ? "TAGGED" : "STROBE";
+    }
+    const agc = $("agc-mode");
+    if (agc && this.isAstronaut) {
+      const flags = [];
+      flags.push(this.input.attitudeHold ? "ATT HOLD" : "PGNCS");
+      if (this.input.engineCut) flags.push("CUT");
+      if (this.input.translateMode) flags.push("RCS");
+      if (this.input.hoverLatched) flags.push("HOVER");
+      agc.textContent = flags.join(" · ");
+      agc.classList.toggle("hold", this.input.attitudeHold);
+    }
 
     const vsNeedle = 50 + THREE.MathUtils.clamp(msToFps(vs) / 30, -1, 1) * 46;
     $("vs-needle").style.left = vsNeedle + "%";
@@ -439,19 +670,26 @@ class Game {
     $("stick-dot").style.left = 50 + this.input.roll * 42 + "%";
     $("stick-dot").style.top = 50 + this.input.pitch * 42 + "%";
     $("throttle-fill").style.height = this.input.throttle * 100 + "%";
+    const extra = this.input.cockpitFlags().length ? " · " + this.input.cockpitFlags().join(" ") : "";
     $("stick-status").textContent =
       this.input.statusLine() +
       " · THR " +
       Math.round(this.input.throttle * 100) +
       "% · g " +
-      this.planet.gravity.toFixed(2);
+      this.planet.gravity.toFixed(2) +
+      extra +
+      (this.audio.muted ? " · MUTED" : "");
 
     const hint = $("live-hint");
     if (l.parked) hint.textContent = "Parked. Add throttle to lift off again.";
     else if (l.contact) {
       hint.textContent = free
         ? "CONTACT — keep it soft, or push throttle to climb."
-        : "CONTACT LIGHT — pull the throttle slider back to idle, like Armstrong.";
+        : this.isAstronaut
+          ? "CONTACT LIGHT — button 3 or pull the slider to idle for ENGINE STOP."
+          : "CONTACT LIGHT — pull the throttle slider back to idle, like Armstrong.";
+    } else if (this.isAstronaut && !l.rescued) {
+      hint.textContent = "Overfly the orange strobe to tag the beacon, then fly the gold ring. Hold 5 for RCS.";
     } else if (hs > 4) hint.textContent = "Tilt Eagle toward the gold ring to kill that sideways speed.";
     else if (vs < -4) {
       hint.textContent = `You're dropping fast. Add throttle — ${this.planet.label} gravity is ${this.planet.gravity.toFixed(2)} m/s².`;
@@ -459,6 +697,8 @@ class Game {
       hint.textContent = `Free · rings ${this.hoops.filter((h) => h.collected).length}/${this.hoops.length} · escape at ${Math.round(mToFt(getEscapeAlt()))} ft AGL`;
     } else if (this.isApollo) {
       hint.textContent = "Apollo mode — listen to Capcom · Hat looks down on the gold ring";
+    } else if (this.isAstronaut) {
+      hint.textContent = "4 = ATT HOLD · hold 5 = RCS · hat peeks · slider detent at hover";
     } else {
       hint.textContent = "Hat forward = look down on the gold ring · Slider = engine · Stick tilts Eagle";
     }
@@ -489,16 +729,18 @@ class Game {
   _camera() {
     const l = this.lander;
     if (this.cameraMode === "window") {
-      const fwd = new THREE.Vector3(0, 0.15, 1).applyEuler(new THREE.Euler(l.pitch, l.yaw, l.roll, "YXZ"));
+      const peekYaw = this.camPeekOrbit;
+      const peekElev = this.camPeekElev;
+      const fwd = new THREE.Vector3(peekYaw * 0.8, 0.15 + peekElev * 0.6, 1).applyEuler(new THREE.Euler(l.pitch, l.yaw, l.roll, "YXZ"));
       this.camera.up.set(0, 1, 0);
       this.camera.position.copy(l.pos).add(new THREE.Vector3(0, 2.4, 0));
       this.camera.lookAt(l.pos.clone().add(fwd.multiplyScalar(20)));
       return;
     }
 
-    const elev = 0.38 + this.camElev * 1.12;
-    const dist = 16 + this.camElev * 36;
-    const yaw = l.yaw + Math.PI + this.camOrbit;
+    const elev = 0.38 + this.camElev * 1.12 + this.camPeekElev;
+    const dist = 16 + this.camElev * 36 + Math.max(0, this.camPeekElev) * 10;
+    const yaw = l.yaw + Math.PI + this.camOrbit + this.camPeekOrbit;
     const desired = new THREE.Vector3(
       l.pos.x + Math.sin(yaw) * Math.cos(elev) * dist,
       l.pos.y + Math.sin(elev) * dist + 2,
@@ -535,11 +777,15 @@ class Game {
       if (fuelPct <= 20) rating = "Armstrong-class. You landed with almost nothing left in the tanks.";
       else if (l.impactVs < 1.2 && l.impactHs < 0.6) rating = "Textbook. Aldrin would have liked those numbers.";
       $("debrief-quote").textContent = "“Houston, Tranquility Base here. The Eagle has landed.”";
+      const astroLine = this.isAstronaut
+        ? `<li><span>SURVEY</span> Beacon tagged · RCS ${Math.round((l.rcsFuel / (l.rcsFuelMax || 1)) * 100)}% left</li>`
+        : "";
       $("debrief-stats").innerHTML = `
         <li><span>RATING</span> ${rating}</li>
         <li><span>WORLD</span> ${p.label} · ${p.gravity.toFixed(2)} m/s²</li>
         <li><span>TOUCHDOWN</span> ${msToFps(l.impactVs).toFixed(1)} ft/s down, ${msToFps(l.impactHs).toFixed(1)} ft/s sideways</li>
         <li><span>FUEL LEFT</span> ${fuelPct}%</li>
+        ${astroLine}
         <li><span>SITE</span> ${Math.round(mToFt(l.range()))} ft from the planned marker</li>
       `;
     } else {
@@ -550,7 +796,9 @@ class Game {
       const ringLine =
         l.diff.freeFlight && this.hoops.length
           ? `<li><span>RINGS</span> ${ringsGot}/${this.hoops.length}</li>`
-          : "";
+          : this.isAstronaut
+            ? `<li><span>SURVEY</span> ${l.rescued ? "Beacon tagged" : "Beacon missed"} · RCS ${Math.round((l.rcsFuel / (l.rcsFuelMax || 1)) * 100)}%</li>`
+            : "";
       $("debrief-stats").innerHTML = `
         <li><span>WHAT HAPPENED</span> ${l.failReason || "Impact."}</li>
         <li><span>WORLD</span> ${p.label} · ${p.gravity.toFixed(2)} m/s²</li>
