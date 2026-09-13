@@ -309,7 +309,7 @@ class Game {
     this.escapeWarned = false;
     this.hoverAssistCalled = this.planet.gravity >= (DIFFICULTY[this.difficulty].hoverAssistG ?? 20);
     this.cameraMode = "chase";
-    this.camElev = 0;
+    this.camElev = this.isAstronaut ? 0.34 : 0;
     this.camOrbit = 0;
     this.camPeekElev = 0;
     this.camPeekOrbit = 0;
