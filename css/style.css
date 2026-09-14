@@ -91,7 +91,7 @@ canvas#scene {
   letter-spacing: 0.12em;
   color: var(--gold);
   text-align: right;
-  max-width: 260px;
+  max-width: 320px;
 }
 
 .hud-left,
@@ -276,8 +276,38 @@ canvas#scene {
   gap: 20px;
 }
 
+.mute-flag {
+  position: absolute;
+  right: 22px;
+  top: 58px;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  font-size: 16px;
+  color: #041204;
+  background: var(--caution);
+  padding: 4px 10px;
+}
+
+.agc-mode {
+  position: absolute;
+  left: 50%;
+  top: 58px;
+  transform: translateX(-50%);
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  font-size: 14px;
+  color: var(--dsky);
+  text-shadow: 0 0 12px rgba(124, 255, 107, 0.35);
+}
+
+.agc-mode.hold {
+  color: var(--caution);
+}
+
 .stick-viz {
-  width: 168px;
+  width: 220px;
 }
 
 .stick-cross {
@@ -311,7 +341,8 @@ canvas#scene {
   height: 1px;
 }
 
-#stick-dot {
+#stick-dot,
+#hat-dot {
   position: absolute;
   width: 10px;
   height: 10px;
@@ -323,15 +354,79 @@ canvas#scene {
   box-shadow: 0 0 8px var(--dsky);
 }
 
-.throttle-track {
+#hat-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--gold);
+  box-shadow: none;
+  opacity: 0.35;
+}
+
+#hat-dot.on {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--gold);
+}
+
+.twist-track {
   display: inline-block;
-  width: 14px;
+  width: 12px;
   height: 84px;
-  margin-left: 10px;
+  margin-left: 8px;
   border: 1px solid rgba(212, 180, 90, 0.4);
   background: #111;
   position: relative;
   vertical-align: bottom;
+}
+
+#twist-fill {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.throttle-track {
+  display: inline-block;
+  width: 14px;
+  height: 84px;
+  margin-left: 8px;
+  border: 1px solid rgba(212, 180, 90, 0.4);
+  background: #111;
+  position: relative;
+  vertical-align: bottom;
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin-top: 8px;
+  width: 210px;
+}
+
+.btn-lamp {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  border: 1px solid rgba(212, 180, 90, 0.22);
+  color: rgba(232, 226, 212, 0.28);
+  padding: 3px 0;
+}
+
+.btn-lamp.bound {
+  color: rgba(232, 226, 212, 0.62);
+  border-color: rgba(212, 180, 90, 0.4);
+}
+
+.btn-lamp.on {
+  color: var(--ink);
+  background: var(--dsky);
+  border-color: var(--dsky);
 }
 
 #throttle-fill {
@@ -345,11 +440,147 @@ canvas#scene {
 
 .stick-captions {
   display: flex;
-  gap: 28px;
+  gap: 18px;
   margin-top: 6px;
   font-size: 9px;
   letter-spacing: 0.16em;
   color: var(--gold);
+}
+
+.controls-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.tour-deck {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+
+.stick-tour {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.stick-diagram-wrap {
+  text-align: center;
+}
+
+#stick-diagram {
+  width: 100%;
+  max-width: 248px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+#stick-diagram .hot {
+  cursor: pointer;
+}
+
+#stick-diagram .hot.selected > :not(text),
+#stick-diagram .hot.selected circle,
+#stick-diagram .hot.selected path,
+#stick-diagram .hot.selected rect {
+  stroke: var(--gold);
+  filter: drop-shadow(0 0 6px rgba(212, 180, 90, 0.55));
+}
+
+#stick-diagram .hot.live > :not(text),
+#stick-diagram .hot.live circle,
+#stick-diagram .hot.live path,
+#stick-diagram .hot.live rect {
+  stroke: var(--dsky);
+}
+
+#stick-diagram .diag-label,
+#stick-diagram .diag-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  fill: #e8e2d4;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+#stick-diagram .diag-num {
+  fill: #f4f0e4;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.stick-tour:not(.astronaut) .astro-only {
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.stick-tour.astronaut .astro-only {
+  opacity: 1;
+}
+
+.tour-hint {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(232, 226, 212, 0.5);
+  line-height: 1.35;
+}
+
+.stick-tour-copy {
+  min-height: 168px;
+}
+
+.tour-kicker {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+#tour-title {
+  font-family: "Barlow Condensed", sans-serif;
+  letter-spacing: 0.1em;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+#tour-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(232, 226, 212, 0.88);
+  min-height: 72px;
+}
+
+.tour-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+#tour-step {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  min-width: 52px;
+  text-align: center;
+}
+
+.tour-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .stick-tour {
+    grid-template-columns: 1fr;
+  }
 }
 
 .hint {
@@ -376,8 +607,8 @@ canvas#scene {
 }
 
 .overlay-card {
-  width: min(720px, 100%);
-  max-height: min(92vh, 900px);
+  width: min(860px, 100%);
+  max-height: min(92vh, 960px);
   overflow-y: auto;
   background: rgba(8, 10, 14, 0.88);
   border: 1px solid rgba(212, 180, 90, 0.4);

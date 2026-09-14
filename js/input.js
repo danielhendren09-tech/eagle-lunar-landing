@@ -102,7 +102,46 @@ export const DIFFICULTY = {
     freeFlight: false,
     apollo: true,
   },
+  astronaut: {
+    label: "Astronaut",
+    note: "Full Extreme 3D Pro cockpit. RCS translate, AGC hold, engine cutoff, hover detent, rescue beacon. Hands stay on the stick.",
+    fuel: 0.5,
+    maxThrustG: 2.05,
+    startAlt: 74,
+    startHoriz: 10.8,
+    startVs: -1.22,
+    startX: 96,
+    startZ: 31,
+    padRadius: 12,
+    directAttitude: false,
+    maxLandVs: 2.05,
+    maxLandHs: 1.25,
+    maxLandTilt: 9,
+    freeFlight: false,
+    apollo: false,
+    astronaut: true,
+    rcsAccel: 3.4,
+    rcsFuel: 1,
+    hoverAssistG: 20,
+  },
 };
+
+export const DIFF_ORDER = ["cadet", "pilot", "commander", "apollo", "astronaut", "free"];
+
+export const STICK_BUTTONS = [
+  { id: 0, short: "TRI", name: "Trigger" },
+  { id: 1, short: "THM", name: "Thumb" },
+  { id: 2, short: "CUT", name: "Engine cutoff" },
+  { id: 3, short: "HLD", name: "Attitude hold" },
+  { id: 4, short: "RCS", name: "RCS translate" },
+  { id: 5, short: "CAM", name: "Camera reset" },
+  { id: 6, short: "WLD", name: "Cycle world" },
+  { id: 7, short: "MOD", name: "Cycle mode" },
+  { id: 8, short: "ABR", name: "Abort / again" },
+  { id: 9, short: "MUT", name: "Mute" },
+  { id: 10, short: "INV", name: "Invert throttle" },
+  { id: 11, short: "PIT", name: "Invert pitch" },
+];
 
 function applyDeadzone(v) {
   return Math.abs(v) < DEADZONE ? 0 : v;
@@ -119,6 +158,13 @@ export class Input {
     // Default mapping already inverts; the button is only if a stick is the other way.
     this.invertThrottle = false;
     this.invertPitch = false;
+    this.astronaut = false;
+    this.hoverPoint = 1 / 2.05;
+    this.hoverAssist = false;
+    this.engineCut = false;
+    this.attitudeHold = false;
+    this.translateMode = false;
+    this.hoverLatched = false;
     this.padIndex = null;
     this.padName = "";
     this.connected = false;
@@ -128,6 +174,14 @@ export class Input {
     this._thumbWas = false;
     this.triggerEdge = false;
     this.thumbEdge = false;
+    this.triggerHeldFor = 0;
+    this.triggerAbortEdge = false;
+    this._abortArmed = false;
+    this._lastPoll = performance.now();
+
+    this.btn = new Array(12).fill(false);
+    this.btnEdge = new Array(12).fill(false);
+    this._btnWas = new Array(12).fill(false);
 
     this.roll = 0;
     this.pitch = 0;
@@ -135,6 +189,12 @@ export class Input {
     this.throttle = 0;
     this.hatX = 0;
     this.hatY = 0;
+    this.hatHeld = false;
+    this.hatNavX = 0;
+    this.hatNavY = 0;
+    this._hatLatchX = 0;
+    this._hatLatchY = 0;
+    this._hatRepeatAt = 0;
 
     this.throttleAxis = null;
     this.yawAxis = null;
@@ -163,16 +223,36 @@ export class Input {
       if (e.code === "Digit1") this.throttle = 0;
       if (e.code === "Digit2") this.throttle = 0.5;
       if (e.code === "Digit3") this.throttle = 1;
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Backspace"].includes(e.code)) {
         e.preventDefault();
       }
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.code));
   }
 
+  setScheme(diff, gravity = 1.62) {
+    this.astronaut = !!diff?.astronaut;
+    this.hoverPoint = 1 / (diff?.maxThrustG || 2.05);
+    this.hoverAssist = !!diff?.astronaut && gravity >= (diff?.hoverAssistG ?? 20);
+    if (!this.astronaut) {
+      this.engineCut = false;
+      this.attitudeHold = false;
+      this.translateMode = false;
+      this.hoverLatched = false;
+    }
+  }
+
   poll() {
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - this._lastPoll) / 1000);
+    this._lastPoll = now;
+
     this.triggerEdge = false;
     this.thumbEdge = false;
+    this.triggerAbortEdge = false;
+    this.hatNavX = 0;
+    this.hatNavY = 0;
+    this.btnEdge.fill(false);
 
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     let pad = this.padIndex != null ? pads[this.padIndex] : null;
@@ -213,6 +293,7 @@ export class Input {
 
       trigger = Boolean(pad.buttons[0]?.pressed);
       thumb = Boolean(pad.buttons[1]?.pressed);
+      for (let i = 0; i < 12; i++) this.btn[i] = Boolean(pad.buttons[i]?.pressed);
       const hat = this._readHat(pad);
       this.hatX = hat.x;
       this.hatY = hat.y;
@@ -221,6 +302,7 @@ export class Input {
       this.throttleSource = "keyboard";
       this.hatX = 0;
       this.hatY = 0;
+      this.btn.fill(false);
     }
 
     if (this.keys.has("ArrowLeft") || this.keys.has("KeyA")) roll -= 1;
@@ -241,8 +323,46 @@ export class Input {
     if (this.keys.has("KeyK")) this.hatY += 1;
     if (this.keys.has("KeyJ")) this.hatX -= 1;
     if (this.keys.has("KeyL")) this.hatX += 1;
+    if (this.keys.has("KeyX")) this.btn[2] = true;
+    if (this.keys.has("KeyH")) this.btn[3] = true;
+    if (this.keys.has("AltLeft") || this.keys.has("AltRight") || this.keys.has("KeyT")) this.btn[4] = true;
+    if (this.keys.has("KeyV")) this.btn[5] = true;
+    if (this.keys.has("Comma")) this.btn[6] = true;
+    if (this.keys.has("Period")) this.btn[7] = true;
+    if (this.keys.has("Backspace")) this.btn[8] = true;
+    if (this.keys.has("KeyM")) this.btn[9] = true;
+    if (this.keys.has("KeyU")) this.btn[10] = true;
+    if (this.keys.has("KeyP")) this.btn[11] = true;
     this.hatX = Math.max(-1, Math.min(1, this.hatX));
     this.hatY = Math.max(-1, Math.min(1, this.hatY));
+    this.hatHeld = Math.abs(this.hatX) > 0.15 || Math.abs(this.hatY) > 0.15;
+    this.btn[0] = this.btn[0] || trigger;
+    this.btn[1] = this.btn[1] || thumb;
+
+    if (this.invertPitch) pitch = -pitch;
+
+    if (this.astronaut && this.hoverPoint > 0.05) {
+      const width = this.hoverAssist ? 0.07 : 0.038;
+      if (Math.abs(throttle - this.hoverPoint) < width) {
+        throttle = this.hoverPoint;
+        this.hoverLatched = true;
+      } else {
+        this.hoverLatched = false;
+      }
+    } else {
+      this.hoverLatched = false;
+    }
+
+    if (this.astronaut) {
+      if (this.btn[2] && !this._btnWas[2]) this.engineCut = !this.engineCut;
+      if (throttle < 0.035) this.engineCut = false;
+      if (this.engineCut) throttle = 0;
+      if (this.btn[3] && !this._btnWas[3]) this.attitudeHold = !this.attitudeHold;
+      this.translateMode = this.btn[4];
+    } else {
+      this.engineCut = false;
+      this.translateMode = false;
+    }
 
     this.roll = Math.max(-1, Math.min(1, roll));
     this.pitch = Math.max(-1, Math.min(1, pitch));
@@ -255,6 +375,45 @@ export class Input {
     this.thumbEdge = thumb && !this._thumbWas;
     this._triggerWas = trigger;
     this._thumbWas = thumb;
+
+    if (trigger) {
+      this.triggerHeldFor += dt;
+      if (this.astronaut && this.triggerHeldFor >= 0.65 && !this._abortArmed) {
+        this.triggerAbortEdge = true;
+        this._abortArmed = true;
+      }
+    } else {
+      this.triggerHeldFor = 0;
+      this._abortArmed = false;
+    }
+
+    for (let i = 0; i < 12; i++) {
+      this.btnEdge[i] = this.btn[i] && !this._btnWas[i];
+      this._btnWas[i] = this.btn[i];
+    }
+
+    this._hatNavigate(now);
+  }
+
+  _hatNavigate(now) {
+    const qx = this.hatX > 0.45 ? 1 : this.hatX < -0.45 ? -1 : 0;
+    const qy = this.hatY > 0.45 ? 1 : this.hatY < -0.45 ? -1 : 0;
+    if (qx !== this._hatLatchX) {
+      this._hatLatchX = qx;
+      this.hatNavX = qx;
+      this._hatRepeatAt = now + 420;
+    } else if (qx && now >= this._hatRepeatAt) {
+      this.hatNavX = qx;
+      this._hatRepeatAt = now + 220;
+    }
+    if (qy !== this._hatLatchY) {
+      this._hatLatchY = qy;
+      this.hatNavY = qy;
+      this._hatRepeatAt = now + 420;
+    } else if (qy && now >= this._hatRepeatAt) {
+      this.hatNavY = qy;
+      this._hatRepeatAt = now + 220;
+    }
   }
 
   _trackAxes(ax) {
@@ -374,10 +533,28 @@ export class Input {
     return "NO STICK — KEYBOARD ACTIVE";
   }
 
+  cockpitFlags() {
+    const flags = [];
+    if (this.astronaut) flags.push("ASTRONAUT");
+    if (this.engineCut) flags.push("CUT");
+    if (this.attitudeHold) flags.push("HOLD");
+    if (this.translateMode) flags.push("RCS");
+    if (this.hoverLatched) flags.push("HOVER");
+    if (this.invertPitch) flags.push("PIT INV");
+    return flags;
+  }
+
   menuHint() {
-    if (!this.connected) return "No joystick yet. Plug in a stick, or fly with the keyboard.";
+    if (!this.connected) {
+      return this.astronaut
+        ? "No stick yet. Keyboard: hat IJKL · X cutoff · H hold · T RCS · V camera · M mute · comma/period world/mode."
+        : "No joystick yet. Plug in a stick, or fly with the keyboard.";
+    }
     const pct = Math.round(this.throttle * 100);
     const dump = this.axesLive.map((v, i) => `${i}:${v.toFixed(2)}`).join("  ");
+    if (this.astronaut) {
+      return `Astronaut deck · thr ${pct}% · hat = menu · 7/8 world/mode · 11/12 invert · trigger start.  ${dump}`;
+    }
     if (this.throttleAxis == null) {
       return "Stick is live. Slide the throttle on the base — the bar should fill.  " + dump;
     }

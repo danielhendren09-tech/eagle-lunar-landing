@@ -103,6 +103,21 @@ export class Audio {
     this.musicGain.gain.setTargetAtTime(on && !this.muted ? 0.55 : 0, this.ctx.currentTime, 0.4);
   }
 
+  setMuted(on) {
+    this.muted = on;
+    if (this.musicGain && this.ctx) {
+      this.musicGain.gain.setTargetAtTime(on || !this.musicOn ? 0 : 0.55, this.ctx.currentTime, 0.2);
+    }
+    if (on && this.engineGain && this.ctx) {
+      this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+    }
+  }
+
+  toggleMute() {
+    this.setMuted(!this.muted);
+    return this.muted;
+  }
+
   setEngine(throttle) {
     if (!this.engineGain || this.muted) return;
     const t = this.ctx.currentTime;
