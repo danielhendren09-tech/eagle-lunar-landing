@@ -232,7 +232,7 @@ export class StickTour {
     if (this.astronaut && (input.btnEdge[9] || input.btnEdge[10] || input.btnEdge[11])) return "baseSys";
     if (input.hatHeld && (input.hatNavX || input.hatNavY || Math.hypot(input.hatX, input.hatY) > 0.6)) return "hat";
     if (Math.abs(input.yaw) > 0.45) return "twist";
-    if (Math.hypot(input.roll, input.pitch) > 0.55) return "stick";
+    if (Math.hypot(input.roll, input.pitch) > 0.35) return "stick";
     if (Math.abs(input.throttle - this._thrWas) > 0.08) return "slider";
     return null;
   }
