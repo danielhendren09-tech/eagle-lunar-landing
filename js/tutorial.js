@@ -184,16 +184,16 @@ export class StickTour {
     const now = performance.now();
     const knob = document.getElementById("diag-slider-knob");
     if (knob) {
-      const y = 318 - input.throttle * 62;
+      const y = 340 - input.throttle * 72;
       knob.setAttribute("cy", y.toFixed(1));
     }
     const stick = document.getElementById("diag-stick");
     if (stick) {
       const tilt = input.roll * 10 - input.pitch * 4;
-      stick.setAttribute("transform", `rotate(${tilt.toFixed(2)} 168 248)`);
+      stick.setAttribute("transform", `rotate(${tilt.toFixed(2)} 170 248)`);
     }
     const grip = document.getElementById("diag-twist");
-    if (grip) grip.setAttribute("transform", `rotate(${(input.yaw * 18).toFixed(2)} 168 188)`);
+    if (grip) grip.setAttribute("transform", `rotate(${(input.yaw * 18).toFixed(2)} 170 196)`);
 
     document.querySelectorAll("#stick-diagram [data-part]").forEach((el) => {
       el.classList.toggle("live", this._partLive(el.dataset.part, input));
